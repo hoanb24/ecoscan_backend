@@ -1,8 +1,9 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require('dotenv');
-const helmet = require("helmet");
-const connect = require("./config/db/db");
+const express = require('express')
+const cors = require('cors')
+const morgan = require('morgan')
+const dotenv = require('dotenv')
+const helmet = require('helmet')
+const connect = require('./config/db/db')
 const route = require('./routes/index')
 dotenv.configDotenv();
 const app = express();
@@ -15,7 +16,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.use(morgan('combined'))
 app.use(express.json());
 app.use(helmet());
 route(app)
