@@ -1,12 +1,14 @@
 const express = require('express')
+const multer = require('multer')
+const upload = multer()
 
-const { registerUser, loginUser } = require('../controllers/userController')
+const { registerUser, loginUser, forgotPassword, resetPassword } = require('../controllers/userController')
 
 const router = express.Router()
 
-router.post('/sign-up',registerUser);
-
-router.post('/sign-in',loginUser);
-
+router.post('/sign-up',upload.none(),registerUser)
+router.post('/sign-in',upload.none(),loginUser)
+router.post('/forgotPassword', forgotPassword)
+router.post('/resetPassword', resetPassword)
 
 module.exports = router
