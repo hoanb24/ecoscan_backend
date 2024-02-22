@@ -13,16 +13,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         required:true
     },
-    // isAdmin:{
-    //     type: Number,
-    //     validate: {
-    //         validator: function(value) {
-    //             return value === 0 || value === 1;
-    //         },
-    //         message : 'isAdmin field must be either 0 or 1'
-    //     }
-    // },
-    
+    resetPasswordToken: {
+        type: String,
+        default: null, 
+    },
+    resetPasswordExpire: {
+        type: Date,
+        default: null, 
+    },
 })
 
 
