@@ -10,10 +10,12 @@ const productSchema = new mongoose.Schema({
         type: Number,
         require: true
     },
-    image: {
-        type: String,
-        require:true
-    },
+    image: [{
+        url: {
+            type: String,
+            required: true
+        }
+    }],
     ingredient : {
         type: String,
         require:true

@@ -5,9 +5,10 @@ const crypto = require("crypto")
 const helpers = require("../helpers/jwt")
 const jwt = require("jsonwebtoken")
 const validator = require('validator')
+const cloudinary = require('../config/cloudinary/cloudinary')
 const  { isEmail } = require('validator')
 const dotenv = require('dotenv')
-dotenv.configDotenv();
+dotenv.configDotenv()
 
 const userController = {
   registerUser: async (req, res) => {
@@ -163,8 +164,36 @@ const userController = {
           message:"A server error has occurred"
         })
     }
+  },
+  editProfile : async (req,res) => {
+    const userId = req.body.userId
+    try {
+      const userExists = await User.findOne({
+        _id: userId
+      })
+      if(!userExists) {
+        return res.status(400).json({
+          message:"User not found"
+        })
+      }
+      const profileImage = req.file
+      if(profileImage) {
+        const result = await cloudinary.uploader.upload(profileImage.path,{folder: 'user-profiles'})
+        userExists.profileImage = result.secure_url
+        userExists.profileImagePublicId = result.public_id
+      }
+      userExists.name = req.body.name  
+      userExists.password = req.body.password
+      await userExists.save()
+      return res.status(200).json({
+        message:"Profile updating successfully", userExists
+      })
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-};
+};  
 
 module.exports = userController;
 
