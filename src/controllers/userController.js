@@ -193,7 +193,7 @@ const userController = {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-};  
+}  
 
 module.exports = userController;
 
@@ -210,11 +210,11 @@ const sendResetPasswordEmail = async (recipientEmail, token) => {
           from: `${process.env.EMAIL}`,
           to: recipientEmail,
           subject: 'Reset Password',
-          text: `Bạn đã yêu cầu đặt lại mật khẩu tài khoản của bạn.\n
-              Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu:\n
+          text: `You have requested to reset your account password.\n
+              Please click on the following link to reset your password:\n
               http://localhost:3000/resetpw/email=${recipientEmail}/tokenResetPW=${token}\n
-              Liên kết này sẽ hết hạn sau 1 giờ.\n
-              Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.`,
+              This link will expire after 1 hour.\n
+              If you did not request a password reset, please disregard this email.`,
       };
       const info = await transporter.sendMail(mailOptions);
   } catch (error) {
