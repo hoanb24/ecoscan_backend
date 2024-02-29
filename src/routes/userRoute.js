@@ -9,7 +9,7 @@ const router = express.Router()
 router.post('/sign-up',upload.none(),registerUser)
 router.post('/sign-in',upload.none(),loginUser)
 router.post('/forgotPassword', forgotPassword)
-router.post('/resetPassword', resetPassword)
-router.post('/editProfile',editProfile)
+router.put('/resetPassword', resetPassword)
+router.put('/editProfile',editProfile)
 
 module.exports = router

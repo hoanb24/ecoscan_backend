@@ -8,6 +8,6 @@ const router = express.Router()
 
 router.post('/getHistorybyId',upload.none(),getHistory)
 router.post('/postHistory',upload.none(),postHistory)
-router.post('/deletedHistory/:historyId',deleteHistory)
+router.delete('/deletedHistory/:historyId',deleteHistory)
 
 module.exports = router
