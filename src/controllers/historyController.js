@@ -8,7 +8,7 @@ const HistoryController = {
         userId: userId,
       })
       if (historyBarcode.length == 0) {
-        return res.status(200).json({
+        return res.status(204).json({
           message: "No history data found for the given user.",
         })
       }
@@ -35,7 +35,7 @@ const HistoryController = {
         barcode_number: barcodeNumber,
       })
       await newHistory.save()
-      return res.status(200).json({
+      return res.status(201).json({
         message: "History created successfully",
       });
     } catch (err) {
