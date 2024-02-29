@@ -1,4 +1,5 @@
-const History = require("../models/historyModel");
+const History = require('../models/historyModel')
+const Product = require('../models/productModel')
 
 const HistoryController = {
   getHistory: async (req, res) => {
@@ -7,13 +8,24 @@ const HistoryController = {
       const historyBarcode = await History.find({
         userId: userId,
       })
+      const products = await Promise.all(historyBarcode.map(async (history) => {
+        const product = await Product.findOne({ barcode_number: history.barcode_number})
+        const data = {
+          historyId: history._id,
+          userId: history.userId,
+          barcode_number: history.barcode_number,
+          productData: product,
+          create_at: history.create_at
+        }
+        return data
+      }))
       if (historyBarcode.length == 0) {
-        return res.status(200).json({
+        return res.status(204).json({
           message: "No history data found for the given user.",
         })
       }
       return res.status(200).json({
-        data: historyBarcode,
+        data: products,
       })
     } catch (err) {
         return res.status(500).json({ message: "Internal server error" })
@@ -22,12 +34,9 @@ const HistoryController = {
   postHistory: async (req, res) => {
     try {
       const { barcodeNumber, userId } = req.body
-      const existingHistory = await History.findOne({
-        barcode_number: barcodeNumber
-      })
-      if (existingHistory){
+      if (barcodeNumber == null || userId == null){
         return res.status(400).json({
-          message: "Barcode already exists in history"
+          message: "Barcode and userId mustn't be null"
         })
       }
       const newHistory = new History({
@@ -35,7 +44,7 @@ const HistoryController = {
         barcode_number: barcodeNumber,
       })
       await newHistory.save()
-      return res.status(200).json({
+      return res.status(201).json({
         message: "History created successfully",
       });
     } catch (err) {
