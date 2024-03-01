@@ -1,5 +1,6 @@
 const Category = require('../models/categoryModel')
 const SubCategory = require('../models/subCategoryModel')
+const Product = require('../models/productModel')
 
 const adminController = {
     addCategory : async(req,res) => {
@@ -46,6 +47,43 @@ const adminController = {
             })
 
         } catch (err) {
+            console.error(err)
+            return res.status(500).json({
+                message:"Internal Server Error"
+            })
+        }
+    },
+    getAllProduct : async (req,res) => {
+        try {
+            const dataProduct = await Product.find().sort({ subCategoryId: 1}).populate('subCategoryId','name')
+            if(dataProduct == null){
+                return res.status(204).json({
+                    message: "Data not found"
+                })
+            }
+            return res.status(200).json({
+                data: dataProduct
+            })
+        } catch (err) {
+            console.error(err)
+            return res.status(500).json({
+                message: "Internal Server Error"
+            })
+        }
+    },
+    deleteProduct : async (req,res) => {
+        try{
+            const { productId } = req.params
+            if(productId == null) {
+                return res.status(204).json({
+                    message: "Data not found"
+                })
+            }
+            const deletedProduct = await Product.findByIdAndDelete(productId)
+            return res.status(200).json({
+                message : "Product deleted successfully"
+            })
+        } catch (err){
             console.error(err)
             return res.status(500).json({
                 message:"Internal Server Error"
