@@ -4,7 +4,7 @@ const Product = require('../models/productModel')
 const HistoryController = {
   getHistory: async (req, res) => {
     try {
-      const { userId } = req.body
+      const { userId } = req.params
       const historyBarcode = await History.find({
         userId: userId,
       })
