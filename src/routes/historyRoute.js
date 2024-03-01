@@ -6,7 +6,7 @@ const { getHistory, postHistory, deleteHistory } = require('../controllers/histo
 
 const router = express.Router()
 
-router.post('/getHistorybyId',upload.none(),getHistory)
+router.get('/getHistorybyId/:userId',getHistory)
 router.post('/postHistory',upload.none(),postHistory)
 router.delete('/deletedHistory/:historyId',deleteHistory)
 
