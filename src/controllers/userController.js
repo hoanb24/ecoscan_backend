@@ -91,6 +91,7 @@ const userController = {
         });
         return res.status(200).json({
           message: "Login successfully",
+          data: user
         });
       }
     } catch (err) {
