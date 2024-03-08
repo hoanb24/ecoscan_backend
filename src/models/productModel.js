@@ -24,10 +24,6 @@ const productSchema = new mongoose.Schema({
         type:Number,
         require:true
     },
-    shopId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref:'Shop'
-    },
     subCategoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref:'SubCategory'
