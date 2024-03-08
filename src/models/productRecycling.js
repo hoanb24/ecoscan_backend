@@ -13,6 +13,10 @@ const productRecycleSchema = new mongoose.Schema({
             require:true
         }
     }],
+    categoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref:'Category'
+    }
 })
 
 const productRecycleModel = mongoose.model('ProductRecycle',productRecycleSchema)
