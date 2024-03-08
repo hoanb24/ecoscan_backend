@@ -3,7 +3,7 @@ const SubCategory = require('../models/subCategoryModel')
 const Product = require('../models/productModel')
 
 const adminController = {
-    addCategory : async(req,res) => {
+    addCategory : async (req,res) => {
         try {
             const { categoryName } = req.body
             if(categoryName == null) {
@@ -89,6 +89,9 @@ const adminController = {
                 message:"Internal Server Error"
             })
         }
+    },
+    editProduct: async (req,res) => {
+        const { productPrice, productImage, } = req.body
     }
 }
 

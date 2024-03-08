@@ -6,6 +6,6 @@ const { getShopById } = require('../controllers/shopController')
 
 const router = express.Router()
 
-router.get('/getShopById',upload.none(),getShopById)
+router.get('/getShopById/:shopId',upload.none(),getShopById)
 
 module.exports = router
