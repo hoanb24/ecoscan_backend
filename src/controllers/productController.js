@@ -15,7 +15,7 @@ const productController = {
       const shopProduct = await Shop_Product.findOne({
         productId: existProduct._id,
       });
-      const shopId = shopProduct.shopId
+      const shopId = shopProduct.shopId   
       const shopData = await Shop.findById(shopId);
       const mergedProductData = Object.assign({}, existProduct.toObject(), {
         shopData: shopData.toObject(),
