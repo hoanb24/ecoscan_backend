@@ -7,12 +7,22 @@ const userSchema = new mongoose.Schema({
     },
     password :{
         type : String,
-        required: true
+        required: false
     },
     email:{
         type: String,
         required:true
     },
+    phone: {
+        type:Number,
+        require: false
+    }
+    ,
+    avatar : {
+        type: String,
+        require:false
+    }
+    ,
     resetPasswordToken: {
         type: String,
         default: null, 

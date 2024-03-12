@@ -13,13 +13,7 @@ dotenv.configDotenv()
 const userController = {
   registerUser: async (req, res) => {
     try {
-      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
       const { username, email, newPassword, confirmPassword } = req.body;
-
-      const isGmailAddressValid = gmailRegex.test(email);
-      if (!isGmailAddressValid) {
-        return res.status(400).json({ message: "Invalid Gmail address" });
-      }
 
       const userExists = await User.findOne({ username });
       if (userExists) {
@@ -96,6 +90,43 @@ const userController = {
       }
     } catch (err) {
       return res.status(500).json(err);
+    }
+  },
+  loginWithGoogle :  async (req, res) => {
+    try {
+      const { username, email, avatar, phone } = req.body
+      let user = await User.findOneAndUpdate({
+        email: email
+      },
+      {
+        $set: {
+          name: username,
+          email: email,
+          avatar: avatar,
+          phone: phone
+        }
+      },
+      {
+        new: true
+      }
+      )
+      if(!user){
+        const newUser = new User({
+          name: username,
+          email:email,
+          avatar:avatar,
+          phone:phone
+        })
+        user = await newUser.save()
+      }
+      return res.status(200).json({
+        data: user
+      })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({
+        message: "Internal Server Error"
+      })
     }
   },
   forgotPassword: async (req, res) => {
