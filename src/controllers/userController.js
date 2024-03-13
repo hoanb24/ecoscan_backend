@@ -224,6 +224,19 @@ const userController = {
       console.error('Error updating profile:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
+  },  
+  logout: async (req,res) => {
+    try {
+      res.clearCookie("accesstoken")
+      res.status(200).json({
+        message: "Logout Successfully"
+      })
+    } catch(err) {
+      console.error(err)
+      return res.status(500).json({
+        message: "Internal Server Error"
+      })
+    }
   }
 }  
 
