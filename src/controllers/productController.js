@@ -1,9 +1,9 @@
-const Product = require('../models/productModel')
-const Shop = require('../models/shopModel')
-const Shop_Product = require('../models/shop_productsModel')
-const ProductRecycle = require('../models/productRecycling')
-const SubCategory = require('../models/subCategoryModel')
-const Category = require('../models/categoryModel')
+const Product = require("../models/productModel");
+const Shop = require("../models/shopModel");
+const Shop_Product = require("../models/shop_productsModel");
+const ProductRecycle = require("../models/productRecycling");
+const SubCategory = require("../models/subCategoryModel");
+const Category = require("../models/categoryModel");
 
 const productController = {
   productScanning: async (req, res) => {
@@ -12,30 +12,69 @@ const productController = {
       const existProduct = await Product.findOne({
         barcode_number: barcodeNumber,
       });
-      const shopProduct = await Shop_Product.findOne({
+
+      const shopProducts = await Shop_Product.find({
         productId: existProduct._id,
       });
-      const shopId = shopProduct.shopId   
-      const shopData = await Shop.findById(shopId);
+
       const mergedProductData = Object.assign({}, existProduct.toObject(), {
-        shopData: shopData.toObject(),
+        shopsData: [],
       });
+
+      for (const shopProduct of shopProducts) {
+        const shopId = shopProduct.shopId;
+        const shopData = await Shop.findById(shopId);
+        const price = (shopProduct.price).toFixed(3);
+        mergedProductData.shopsData.push({ ...shopData.toObject(), price });
+      }
+
       const relatedProducts = await Product.find({
         subCategoryId: existProduct.subCategoryId,
         _id: { $ne: existProduct._id },
       });
-      for (let i = 0; i < relatedProducts.length; i++) {
-        const relatedProduct = relatedProducts[i]
-        const relatedShopProduct = await Shop_Product.findOne({
+
+      const relatedShopIds = await Shop_Product.find({
+        productId: { $in: relatedProducts.map((product) => product._id) },
+      }).distinct("shopId");
+
+      const relatedShopsData = await Shop.find({
+        _id: { $in: relatedShopIds },
+      });
+
+      const relatedProductsData = await Promise.all(
+        relatedProducts.map(async (relatedProduct) => {
+          const shopProducts = await Shop_Product.find({
             productId: relatedProduct._id,
-        });
-        const relatedShopId = relatedShopProduct.shopId
-        const relatedShopData = await Shop.findById(relatedShopId);
-        const mergedRelatedData = Object.assign({}, relatedProduct.toObject(), {
-            shopData: relatedShopData.toObject(),
+          });
+          const shopIds = shopProducts.map((shopProduct) => shopProduct.shopId);
+      
+          const shopsData = await Shop.find({ _id: { $in: shopIds } });
+      
+          const productPrices = await Promise.all(
+            shopProducts.map(async (shopProduct) => {
+              const shopPrice = (shopProduct.price).toFixed(3);
+              return { shopId: shopProduct.shopId, price: shopPrice };
+            })
+          );
+      
+          const shopsDataObject = shopsData.map((shopData, index) => {
+            return Object.assign({}, shopData.toObject(), {
+              price: productPrices[index].price,
+            });
+          });
+          
+          shopsDataObject.sort((a, b) => a.price - b.price);
+      
+          return Object.assign({}, relatedProduct.toObject(), {
+            shopsData: shopsDataObject,
+          });
         })
-        relatedProducts[i] = mergedRelatedData
-    }
+      );
+      
+
+      const resolvedRelatedProductsData = await Promise.all(
+        relatedProductsData
+      );
       if (existProduct == null) {
         return res.status(400).json({
           message: "Product doesn't exist",
@@ -48,7 +87,7 @@ const productController = {
       }
       return res.status(200).json({
         data: mergedProductData,
-        relatedProduct: relatedProducts,
+        relatedProduct: resolvedRelatedProductsData,
       });
     } catch (err) {
       console.error(err);
@@ -57,20 +96,20 @@ const productController = {
       });
     }
   },
-  productRecycle : async (req, res) => {
-    const { subCategoryId } = req.params
-    const subCategoryData = await SubCategory.findById(subCategoryId)
-    const categoryData = await Category.findById(subCategoryData._id)
-    const productRecycle = await ProductRecycle.findById(categoryData._id)
-    if(!productRecycle) {
+  productRecycle: async (req, res) => {
+    const { subCategoryId } = req.params;
+    const subCategoryData = await SubCategory.findById(subCategoryId);
+    const categoryData = await Category.findById(subCategoryData._id);
+    const productRecycle = await ProductRecycle.findById(categoryData._id);
+    if (!productRecycle) {
       return res.status(400).json({
-        message: "Product doesn't have Recycling"
-      })
+        message: "Product doesn't have Recycling",
+      });
     }
     return res.status(200).json({
-      data: productRecycle
-    })
-  }
+      data: productRecycle,
+    });
+  },
 };
 
-module.exports = productController
+module.exports = productController;
