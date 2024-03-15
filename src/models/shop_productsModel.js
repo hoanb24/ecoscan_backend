@@ -12,7 +12,11 @@ const shop_productSchema = new mongoose.Schema({
     expire :{
         type : Date,
         default: Date.now()
-    }
+    },
+    price : {
+        type: Number,
+        require: true
+    },
 })
 const shop_productModel = mongoose.model('shop_products',shop_productSchema)
 module.exports = shop_productModel 

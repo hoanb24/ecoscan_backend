@@ -119,6 +119,11 @@ const userController = {
         })
         user = await newUser.save()
       }
+      const accessToken = helpers.generateAccessToken(user)
+      await res.cookie("accesstoken", accessToken, {
+        secure: false,
+        path: "/",
+      })
       return res.status(200).json({
         data: user
       })
@@ -224,7 +229,7 @@ const userController = {
       console.error('Error updating profile:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
-  },  
+  },
   logout: async (req,res) => {
     try {
       res.clearCookie("accesstoken")
