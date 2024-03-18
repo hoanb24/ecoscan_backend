@@ -26,6 +26,7 @@
     "cloudinary": "^2.0.1",
     "cookie": "^0.6.0",
     "cors": "^2.8.5",
+    "decimal.js": "^10.4.3",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",

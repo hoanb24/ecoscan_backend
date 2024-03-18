@@ -97,18 +97,25 @@ const productController = {
     }
   },
   productRecycle: async (req, res) => {
-    const { subCategoryId } = req.params;
-    const subCategoryData = await SubCategory.findById(subCategoryId);
-    const categoryData = await Category.findById(subCategoryData._id);
-    const productRecycle = await ProductRecycle.findById(categoryData._id);
-    if (!productRecycle) {
-      return res.status(400).json({
-        message: "Product doesn't have Recycling",
+    try {
+      const { subCategoryId } = req.params;
+      const subCategoryData = await SubCategory.findById(subCategoryId);
+      const categoryData = await Category.findById(subCategoryData._id);
+      const productRecycle = await ProductRecycle.findById(categoryData._id);
+      if (!productRecycle) {
+        return res.status(400).json({
+          message: "Product doesn't have Recycling",
+        });
+      }
+      return res.status(200).json({
+        data: productRecycle,
       });
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({
+        message: "Internal Server Error"
+      })
     }
-    return res.status(200).json({
-      data: productRecycle,
-    });
   },
 };
 

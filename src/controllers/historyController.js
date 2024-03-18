@@ -39,14 +39,24 @@ const HistoryController = {
           message: "Barcode and userId mustn't be null"
         })
       }
-      const newHistory = new History({
+      const existHistory = await History.findOne({
         userId: userId,
-        barcode_number: barcodeNumber,
+        barcode_number: barcodeNumber
       })
-      await newHistory.save()
-      return res.status(201).json({
-        message: "History created successfully",
-      });
+      if(existHistory) {
+          return res.status(200).json({
+            message: "History already exist"
+          })
+      } else {
+        const newHistory = new History({
+          userId: userId,
+          barcode_number: barcodeNumber,
+        })
+        await newHistory.save()
+        return res.status(201).json({
+          message: "History created successfully",
+        });
+      }
     } catch (err) {
       console.error(err)
       return res.status(500).json({ message: "Internal server error" })

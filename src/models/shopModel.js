@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Decimal = require('decimal.js')
 
 const shopSchema = new mongoose.Schema({
     shopName : {
@@ -14,11 +15,11 @@ const shopSchema = new mongoose.Schema({
         require:true
     },
     longitude : {
-        type:Number,
+        type:Decimal,
         require:true
     },
     latitude : {
-        type:Number,
+        type:Decimal,
         require:true
     }
 })
