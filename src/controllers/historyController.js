@@ -1,80 +1,99 @@
-const History = require('../models/historyModel')
-const Product = require('../models/productModel')
+const History = require("../models/historyModel")
+const Product = require("../models/productModel")
+
+const moment = require('moment')
 
 const HistoryController = {
   getHistory: async (req, res) => {
     try {
-      const { userId } = req.params
+      const { userId } = req.params;
       const historyBarcode = await History.find({
         userId: userId,
-      })
-      const products = await Promise.all(historyBarcode.map(async (history) => {
-        const product = await Product.findOne({ barcode_number: history.barcode_number})
-        const data = {
-          historyId: history._id,
-          userId: history.userId,
-          barcode_number: history.barcode_number,
-          productData: product,
-          create_at: history.create_at
-        }
-        return data
-      }))
+      });
+      const products = await Promise.all(
+        historyBarcode.map(async (history) => {
+          const product = await Product.findOne({
+            barcode_number: history.barcode_number,
+          });
+          const data = {
+            historyId: history._id,
+            userId: history.userId,
+            barcode_number: history.barcode_number,
+            productData: product,
+            create_at: history.create_at,
+          };
+          return data;
+        })
+      );
       if (historyBarcode.length == 0) {
         return res.status(204).json({
           message: "No history data found for the given user.",
-        })
+        });
       }
       return res.status(200).json({
         data: products,
-      })
+      });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error" })
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
   postHistory: async (req, res) => {
     try {
-      const { barcodeNumber, userId } = req.body
-      if (barcodeNumber == null || userId == null){
+      const { barcodeNumber, userId } = req.body;
+      if (barcodeNumber == null || userId == null) {
         return res.status(400).json({
-          message: "Barcode and userId mustn't be null"
+          message: "Barcode and userId mustn't be null",
+        });
+      }
+      const existHistory = await History.findOne({
+        barcode_number: barcodeNumber,
+        userId : userId
+      })
+      if (existHistory) {
+        const create_at = new Date()
+        const date = moment(create_at).format('HH:mm:ss DD/MM/YYYY', 'HH:mm:ss DD/MM/YYYY')
+        existHistory.create_at = moment(date, "HH:mm:ss DD/MM/YYYY").toDate()
+        await existHistory.save()
+        return res.status(200).json({
+          message: "History updated successfully",
+        })
+      } else {
+        const newHistory = new History({
+          userId: userId,
+          barcode_number: barcodeNumber,
+        })
+        await newHistory.save()
+        return res.status(201).json({
+          message: "History created successfully",
         })
       }
-      const newHistory = new History({
-        userId: userId,
-        barcode_number: barcodeNumber,
-      })
-      await newHistory.save()
-      return res.status(201).json({
-        message: "History created successfully",
-      });
     } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Internal server error" })
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
-  deleteHistory : async (req,res) => {
+  deleteHistory: async (req, res) => {
     try {
-      const historyId = req.params.historyId
-      if(!historyId) {
+      const historyId = req.params.historyId;
+      if (!historyId) {
         return res.status(400).json({
-          message: "History ID is required"
-        })
+          message: "History ID is required",
+        });
       }
-      const deletedHistory = await History.findByIdAndDelete(historyId)
-      if(!deletedHistory) {
+      const deletedHistory = await History.findByIdAndDelete(historyId);
+      if (!deletedHistory) {
         return res.status(400).json({
-          message: "History not found."
-        })
+          message: "History not found.",
+        });
       }
       return res.status(200).json({
-        message: "History deleted successfully"
-      })
-
+        message: "History deleted successfully",
+      });
     } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: "Internal server error" })
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
     }
-  }
+  },
 };
 
-module.exports = HistoryController
+module.exports = HistoryController;

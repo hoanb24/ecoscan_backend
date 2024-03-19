@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const moment = require('moment')
 
 const historySchema = new mongoose.Schema({
     userId : {
@@ -8,7 +9,7 @@ const historySchema = new mongoose.Schema({
     },
     create_at : {
         type: Date,
-        default: Date.now(),
+        default: moment().toDate(),
     },
     barcode_number: {
         type: Number,   
