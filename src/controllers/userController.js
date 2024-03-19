@@ -78,11 +78,18 @@ const userController = {
         });
       }
       if (user && validPassword) {
-        const accessToken = helpers.generateAccessToken(user);
+        const accessToken = helpers.generateAccessToken(user)
+        const refreshToken = helpers.generateRefreshToken(user)
         await res.cookie("accesstoken", accessToken, {
+          httpOnly: true,
           secure: false,
           path: "/",
-        });
+        })
+        await res.cookie("refreshtoken", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          path: "/",
+        })
         return res.status(200).json({
           message: "Login successfully",
           data: user
