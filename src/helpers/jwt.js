@@ -25,8 +25,32 @@ const verifyAccessToken = (accessToken) => {
     }
 } 
 
+const generateRefreshToken = (user) => {
+    return refreshToken = jwt.sign({
+        userId: user._id
+    },process.env.REFRESH_TOKEN_SECRET, {
+        expiresIn: "7d"
+    })
+}
+
+const verifyRefreshToken = (refreshToken) => {
+    try {
+        token = refreshToken
+        const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
+        return decoded
+    } catch (err) {
+        if (err instanceof TokenExpiredError) {
+            return {
+                expired: true
+            }
+        }
+        console.error(err)
+    }
+}
 
 module.exports = {
     generateAccessToken,
-    verifyAccessToken
+    verifyAccessToken,
+    generateRefreshToken,
+    verifyRefreshToken
 }

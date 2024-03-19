@@ -91,7 +91,23 @@ const adminController = {
         }
     },
     editProduct: async (req,res) => {
-        const { productPrice, productImage, } = req.body
+        try {
+            const { productId, productName, ingredient, manufacturer, productImage, barcodeNumber } = req.body;
+            const updateFields = {};
+            if (productName) updateFields.productName = productName;
+            if (ingredient) updateFields.ingredient = ingredient;
+            if (manufacturer) updateFields.manufacturer = manufacturer;
+            if (productImage) updateFields.productImage = productImage;
+            if (barcodeNumber) updateFields.barcodeNumber = barcodeNumber;
+            const updatedProduct = await Product.findByIdAndUpdate(productId, updateFields, { new: true });
+            if (!updatedProduct) {
+                return res.status(404).json({ error: "Product does not exist" });
+            }
+            res.status(200).json(updatedProduct);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Internal Server Error" });
+        }
     }
 }
 
