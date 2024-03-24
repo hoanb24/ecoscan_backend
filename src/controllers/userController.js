@@ -1,284 +1,283 @@
-const User = require("../models/userModel");
-const bcrypt = require('bcrypt');
-const crypto = require("crypto");
-const helpers = require('../helpers/jwt')
-const jwt = require('jsonwebtoken')
+const User = require("../models/userModel")
+const bcrypt = require("bcrypt")
+const nodemailer = require("nodemailer")
+const crypto = require("crypto")
+const helpers = require("../helpers/jwt")
+const jwt = require("jsonwebtoken")
+const validator = require('validator')
+const cloudinary = require('../config/cloudinary/cloudinary')
+const  { isEmail } = require('validator')
+const dotenv = require('dotenv')
+dotenv.configDotenv()
 
 const userController = {
+  registerUser: async (req, res) => {
+    try {
+      const { username, email, newPassword, confirmPassword } = req.body;
 
-    // // requestRefreshToken
-    // requestRefreshToken: async (req, res) => {
-    //     // TAKE REFRESH TOKEN TỪ USER.
-    //     const refreshToken = req.cookies.refreshtoken;
-    //     console.log(refreshToken);
-    //     if (!refreshToken) return res.status(401).json("You are not authenticated")
+      const userExists = await User.findOne({ username });
+      if (userExists) {
+        return res
+          .status(400)
+          .json({ message: "Username is already registered" });
+      }
 
-    //     // const userToken = User.findOne({id: req.})
-    //     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
-    //         if (err) console.log(err);
-    //         // Create new RefreshToken, refresh access_token
-    //         const userDb = await User.findById(user.userId);
-    //         if (!userDb) {
-    //             return res.status(401).json("User not found");
-    //         }
-    //         const newAccessToken = helpers.generateAccessToken(userDb)
-    //         const newRefreshToken = helpers.generateRefreshToken(userDb);
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ message: "Email is already registered" });
+      }
 
-    //         const updateRefreshToken = await User.findOneAndUpdate({
-    //             _id: user.userId
-    //         }, {
-    //             $set: {
-    //                 refresh_token: newRefreshToken
-    //             }
-    //         }, {
-    //             new: true
-    //         });
-    //         res.cookie("refreshtoken", newRefreshToken, {
-    //             httpOnly: true,
-    //             secure: false,
-    //             path: "/",
-    //             sameSite: "strict"
-    //         });
-    //         res.cookie('accesstoken', newAccessToken, {
-    //             secure: false,
-    //             path: "/",
-    //             sameSite: "strict"
-    //         })
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
 
-    //         res.status(200).json({
-    //             accessToken: newAccessToken
-    //         });
-    //     })
-    // },
+      const isPasswordValid =/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,16}$/.test(newPassword);
+      if (!isPasswordValid) {
+        return res.status(400).json({
+          message:
+            "Password must be 6-16 characters long and contain at least one uppercase letter, one digit, and one special character.",
+        });
+      }
 
-    // //REGISTER
-    // registerUserSendEmail: async (req, res) => {
-    //     try {
-    //         const existingUsername = await User.findOne({
-    //             username: req.body.username
-    //         });
-    //         if (existingUsername) {
-    //             return res.status(400).json({
-    //                 message: 'Username is already registered'
-    //             });
-    //         }
-    //         const existingUserEmail = await User.findOne({
-    //             email: req.body.email
-    //         });
-    //         if (existingUserEmail) {
-    //             return res.status(400).json({
-    //                 message: 'email is already registered'
-    //             });
-    //         }
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      const newUser = new User({
+        name: username,
+        password: hashedPassword,
+        email: email,
+      });
+      await newUser.save();
 
-    //         const token = crypto.randomBytes(20).toString('hex');
-    //         userEmail = await req.body.email
-    //         userName = await req.body.username
-    //         await sendCreatePasswordEmail(userEmail, userName, token);
-    //         return res.status(200).json({
-    //             message: "successfully"
-    //         })
-    //     } catch (err) {
-    //         return res.status(500).json(err);
-    //     }
-    // },
-
-    registerUser: async (req, res) => {
-        try {
-          const { username, email, newPassword, confirmPassword } = req.body;
-      
-          const queries = [
-            { key: 'username', value: username, message: 'Username is already registered' },
-            { key: 'email', value: email, message: 'Email is already registered' }
-          ];
-      
-          for (const query of queries) {
-            const existingUser = await User.findOne({ [query.key]: query.value });
-            if (existingUser) {
-              return res.status(400).json({ message: query.message });
-            }
-          }
-      
-          if (newPassword !== confirmPassword) {
-            return res.status(400).json({ message: 'Passwords are not the same' });
-          }
-      
-          const salt = await bcrypt.genSalt(10);
-          const hashedPassword = await bcrypt.hash(newPassword, salt);
-      
-          const newUser = new User({
-            name: username,
-            password: hashedPassword,
-            email: email,
-          });
-      
-          await newUser.save();
-      
-          return res.status(200).json({ message: 'Successfully create a user' });
-        } catch (err) {
-          return res.status(500).json(err);
+      return res.status(201).json({ message: "User created successfully" });
+    } catch (err) {
+      return res.status(500).json({ message: "An error occurred" });
+    }
+  },
+  loginUser: async (req, res) => {
+    try {
+      const user = await User.findOne({
+        email: req.body.email,
+      });
+      if (user == null) {
+        return res.status(404).json({
+          message: "Account is not registered",
+        });
+      }
+      if (!user) {
+        return res.status(404).json({
+          message: "Username is incorrect",
+        });
+      }
+      const validPassword = await bcrypt.compare(
+        req.body.password,
+        user.password
+      );
+      if (!validPassword) {
+        return res.status(404).json({
+          message: "Password is incorrect",
+        });
+      }
+      if (user && validPassword) {
+        const accessToken = helpers.generateAccessToken(user)
+        const refreshToken = helpers.generateRefreshToken(user)
+        await res.cookie("accesstoken", accessToken, {
+          httpOnly: true,
+          secure: false,
+          path: "/",
+        })
+        await res.cookie("refreshtoken", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          path: "/",
+        })
+        return res.status(200).json({
+          message: "Login successfully",
+          data: user
+        });
+      }
+    } catch (err) {
+      return res.status(500).json(err);
+    }
+  },
+  loginWithGoogle :  async (req, res) => {
+    try {
+      const { username, email, avatar, phone } = req.body
+      let user = await User.findOneAndUpdate({
+        email: email
+      },
+      {
+        $set: {
+          name: username,
+          email: email,
+          avatar: avatar,
+          phone: phone
         }
       },
-
-
-
-    //LOGIN 
-    loginUser: async (req, res) => {
-        try {
-            const user = await User.findOne({
-                email: req.body.email
-            });
-            if (user == null) {
-                return res.status(404).json({
-                    message: "Account is not registered"
-                });
-            }
-            if (!user) {
-                return res.status(404).json({
-                    message: "Username is incorrect"
-                });
-            }
-
-            const validPassword = await bcrypt.compare(req.body.password, user.password);
-
-            if (!validPassword) {
-                return res.status(404).json({
-                    message: "Password is incorrect"
-                });
-            }
-            if (user && validPassword) {
-                // const accessToken = helpers.generateAccessToken(user);
-                // const refreshToken = helpers.generateRefreshToken(user);
-
-                // // Sử dụng findOneAndUpdate để cập nhật trường refresh_token
-                // const updatedUser = await User.findOneAndUpdate({
-                //     username: req.body.username
-                // }, {
-                //     refresh_token: refreshToken
-                // }, {
-                //     new: true
-                // });
-
-                // await res.cookie("refreshtoken", refreshToken, {
-                //     httpOnly: true,
-                //     secure: false,
-                //     path: '/'
-                // });
-                // await res.cookie("accesstoken", accessToken, {
-                //     secure: false,
-                //     path: '/'
-                // });
-                // const {
-                //     password,
-                //     refresh_token,
-                //     ...others
-                // } = user._doc;
-                return res.status(200).json({
-                    // ...others
-                    message: "Login successfully"
-                });
-            }
-        } catch (err) {
-            return res.status(500).json(err);
+      {
+        new: true
+      }
+      )
+      if(!user){
+        const newUser = new User({
+          name: username,
+          email:email,
+          avatar:avatar,
+          phone:phone
+        })
+        user = await newUser.save()
+      }
+      const accessToken = helpers.generateAccessToken(user)
+      await res.cookie("accesstoken", accessToken, {
+        secure: false,
+        path: "/",
+      })
+      return res.status(200).json({
+        data: user
+      })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({
+        message: "Internal Server Error"
+      })
+    }
+  },
+  forgotPassword: async (req, res) => {
+    try {
+      const user = await User.findOne({
+        email: req.body.email,
+      });
+      if (!user) {
+        return res.status(404).json({
+          message: "Email not registered",
+        });
+      }
+      const token = crypto.randomBytes(20).toString('hex')
+      const timestamp = Date.now() * 60 * 60 * 100
+      await User.updateOne({
+        email: req.body.email
+      }, {
+        resetPasswordToken: token,
+        resetPasswordExpire: timestamp
+      })
+      const userEmail = req.body.email
+      await sendResetPasswordEmail(userEmail,token)
+      return res.status(200).json({
+        message:"OTP sent"
+      })
+    } catch (err) {
+        return res.status(500).json(err)
+    }
+  },
+  resetPassword : async (req,res) => {
+    try {
+      const email = req.body.email
+      const token = req.body.token
+      const newPassword = req.body.newPassword
+      const confirmPassword = req.body.confirmPassword
+      const user = await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpire: {
+          $gt: Date.now()
         }
-    },
-
-    // //LOGOUT 
-    // logoutUser: (req, res) => {
-    //     try {
-    //         res.clearCookie('accesstoken');
-    //         res.clearCookie('refreshtoken');
-    //         res.status(200).json({
-    //             message: 'Logout successful'
-    //         });
-    //     } catch (error) {
-    //         return res.status(500).json({
-    //             message: 'Internal Server Error'
-    //         });
-    //     }
-    // },
-    // // ForgotPassword
-    // forgotPassword: async (req, res) => {
-    //     try {
-    //         const user = await User.findOne({
-    //             email: req.body.email
-    //         });
-    //         if (!user) {
-    //             return res.status(404).json({
-    //                 message: "Email is not registered"
-    //             })
-    //         }
-    //         // Tạo token ngẫu nhiên
-    //         const token = crypto.randomBytes(20).toString('hex');
-
-    //         // Sử dụng updateOne để cập nhật dữ liệu dựa trên điều kiện email
-    //         const timestamp = Date.now() + 60 * 60 * 1000;
-    //         await User.updateOne({
-    //             email: req.body.email
-    //         }, {
-    //             resetPasswordToken: token,
-    //             resetPasswordExpires: timestamp
-
-    //         });
-    //         const userEmail = req.body.email;
-
-    //         await sendResetPasswordEmail(userEmail, token);
-    //         return res.status(200).json({
-    //             message: 'Email sent for password reset'
-    //         });
-    //     } catch (err) {
-    //         return res.status(500).json(err);
-    //     }
-    // },
-
-    // //resetPassword
-    // resetPassword: async (req, res) => {
-    //     try {
-    //         const email = req.body.email
-    //         const token = req.body.token;
-    //         const newPassword = req.body.newPassword;
-    //         const confirmPassword = req.body.confirmPassword;
-    //         // Tìm người dùng với token cụ thể và token chưa hết hạn
-    //         const user = await User.findOne({
-    //             resetPasswordToken: token,
-    //             resetPasswordExpires: {
-    //                 $gt: Date.now()
-    //             },
-    //         });
-
-    //         if (!user) {
-    //             return res.status(400).json({
-    //                 message: 'Invalid or expired token, please re-enter your email to receive a new Password reset link.'
-    //             });
-    //         }
-
-    //         if (newPassword != confirmPassword) {
-    //             return res.status(400).json({
-    //                 message: "Passwords are not the same"
-    //             })
-    //         }
-    //         // Đặt lại mật khẩu cho người dùng
-    //         const salt = await bcrypt.genSalt(10)
-    //         const hashed = await bcrypt.hash(req.body.newPassword, salt);
-    //         await User.updateOne({
-    //             email: req.body.email
-    //         }, {
-    //             resetPasswordToken: null,
-    //             resetPasswordExpires: null,
-    //             password: hashed
-    //         });
-    //         return res.status(200).json({
-    //             message: 'Password reset successfully'
-    //         });
-    //     } catch (err) {
-    //         console.error(err);
-    //         return res.status(500).json({
-    //             message: 'A server error has occurred'
-    //         });
-    //     }
-    // },
-
-}
+      })
+      if(!user) {
+        return res.status(400).json({
+          message:"Invalid or expired token, please re-enter your email to receive a new Password reset link."
+        })
+      }
+      if(newPassword !== confirmPassword) {
+        return res.status(400).json({
+          message: "Passwords are not the same"
+        })
+      }
+      const salt = await bcrypt.genSalt(10)
+      const hashed = await bcrypt.hash(newPassword,salt)
+      await User.updateOne({
+        email:email
+      }, {
+        resetPasswordToken:null,
+        resetPasswordExpire:null,
+        password:hashed
+      })
+      return res.status(201).json({
+        message:"Password reset successfully"
+      })
+    } catch (err){
+        console.error(err)
+        return res.status(400).json({
+          message:"A server error has occurred"
+        })
+    }
+  },
+  editProfile : async (req,res) => {
+    const userId = req.body.userId
+    try {
+      const userExists = await User.findOne({
+        _id: userId
+      })
+      if(!userExists) {
+        return res.status(400).json({
+          message:"User not found"
+        })
+      }
+      const profileImage = req.file
+      if(profileImage) {
+        const result = await cloudinary.uploader.upload(profileImage.path,{folder: 'user-profiles'})
+        userExists.profileImage = result.secure_url
+        userExists.profileImagePublicId = result.public_id
+      }
+      userExists.name = req.body.name  
+      userExists.password = req.body.password
+      await userExists.save()
+      return res.status(200).json({
+        message:"Profile updating successfully", userExists
+      })
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+  logout: async (req,res) => {
+    try {
+      res.clearCookie("accesstoken")
+      res.status(200).json({
+        message: "Logout Successfully"
+      })
+    } catch(err) {
+      console.error(err)
+      return res.status(500).json({
+        message: "Internal Server Error"
+      })
+    }
+  }
+}  
 
 module.exports = userController;
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+      user: `${process.env.EMAIL}`,
+      pass: `${process.env.EMAIL_PASSWORD}`
+  }
+});
+const sendResetPasswordEmail = async (recipientEmail, token) => {
+  try {
+      const mailOptions = {
+          from: `${process.env.EMAIL}`,
+          to: recipientEmail,
+          subject: 'Reset Password',
+          text: `You have requested to reset your account password.\n
+              Please click on the following link to reset your password:\n
+              http://localhost:3000/resetpw/email=${recipientEmail}/tokenResetPW=${token}\n
+              This link will expire after 1 hour.\n
+              If you did not request a password reset, please disregard this email.`,
+      };
+      const info = await transporter.sendMail(mailOptions);
+  } catch (error) {
+      console.error(error);
+      throw error;
+  }
+}
+
 
