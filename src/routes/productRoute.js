@@ -6,7 +6,7 @@ const { productScanning, productRecycle,compareTwoProducts } = require('../contr
 
 const router = express.Router()
 
-router.get('/getProductByBarcode',upload.none(),productScanning)
+router.post('/getProductByBarcode',upload.none(),productScanning)
 router.get('/productRecycle/:subCategoryId',upload.none(),productRecycle)
 router.get('/compareProducts',upload.none(),compareTwoProducts)
 

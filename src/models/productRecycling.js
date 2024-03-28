@@ -1,8 +1,18 @@
 const mongoose = require('mongoose')
 
 const productRecycleSchema = new mongoose.Schema({
+    instroduce : {
+        type: String,
+        require: true
+    },
     steps : [{
         step : {
+            type: String,
+            require:true
+        }
+    }],
+    material: [{
+        tool : {
             type: String,
             require:true
         }
