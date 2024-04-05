@@ -11,4 +11,4 @@ router.post('/addSubCategory',upload.none(),addSubCategory)
 router.get('/getAllProduct',getAllProduct)
 router.delete('/deletedProduct/:productId',deleteProduct)
 
-module.exports = router 
+module.exports = router
