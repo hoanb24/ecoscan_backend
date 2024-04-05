@@ -108,8 +108,10 @@ const productController = {
     try {
       const { subCategoryId } = req.params;
       const subCategoryData = await SubCategory.findById(subCategoryId);
-      const categoryData = await Category.findById(subCategoryData.categoryId);
-      const productRecycle = await ProductRecycle.findById(categoryData._id);
+      const categoryData = await Category.findOne(subCategoryData.categoryId);
+      const productRecycle = await ProductRecycle.find({
+        categoryId: categoryData._id
+      });
       if (!productRecycle) {
         return res.status(400).json({
           message: "Product doesn't have Recycling",
@@ -119,7 +121,7 @@ const productController = {
         data: productRecycle,
       });
     } catch (err) {
-      console.error(err);
+      console.error(err); 
       return res.status(500).json({
         message: "Internal Server Error",
       });
@@ -132,7 +134,6 @@ const productController = {
         const price = (shopProduct.price).toFixed(3);
 
         const shopLocation = { lat: parseFloat(shopData.latitude), lon: parseFloat(shopData.longitude) }
-        console.log(userLocation);
         const distanceBetweenUserandProduct = Math.round(distance(userLocation, shopLocation)/ 100) / 10
 
         mergedProductData.shopsData.push({ 
